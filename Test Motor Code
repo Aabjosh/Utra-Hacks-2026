@@ -1,32 +1,74 @@
-// Motor A
+// ===== Motor A (LEFT MOTOR) =====
 int IN1 = 8;
 int IN2 = 9;
 int ENA = 10;
 
-// Motor B
+// ===== Motor B (RIGHT MOTOR) =====
 int IN3 = 6;
 int IN4 = 7;
 int ENB = 5;
+
+// ===== IR Sensors =====
+int IR_LEFT  = 2;
+int IR_RIGHT = 3;
 
 void setup() {
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
+
+  pinMode(IR_LEFT, INPUT);
+  pinMode(IR_RIGHT, INPUT);
+
+  Serial.begin(9600);
 }
 
 void loop() {
-  // Both motors forward
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
-  analogWrite(ENA, 200);
-  analogWrite(ENB, 200);
-  delay(3000);
+  int leftIR  = digitalRead(IR_LEFT);
+  int rightIR = digitalRead(IR_RIGHT);
 
-  // Stop
-  analogWrite(ENA, 0);
-  analogWrite(ENB, 0);
-  delay(2000);
+  // BOTH BLACK → FORWARD
+  if (leftIR == LOW && rightIR == LOW) {
+    Serial.println("FORWARD");
+
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+
+    analogWrite(ENA, 200);
+    analogWrite(ENB, 200);
+  }
+  // LEFT BLACK → TURN LEFT
+  else if (leftIR == LOW) {
+    Serial.println("TURN LEFT");
+
+    // Left motor stop, right motor forward
+    analogWrite(ENA, 0);
+
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+    analogWrite(ENB, 200);
+  }
+  // RIGHT BLACK → TURN RIGHT
+  else if (rightIR == LOW) {
+    Serial.println("TURN RIGHT");
+
+    // Right motor stop, left motor forward
+    analogWrite(ENB, 0);
+
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    analogWrite(ENA, 200);
+  }
+  // BOTH WHITE → STOP
+  else {
+    Serial.println("STOP");
+
+    analogWrite(ENA, 0);
+    analogWrite(ENB, 0);
+  }
+
+  delay(50); // small delay for stability
 }
