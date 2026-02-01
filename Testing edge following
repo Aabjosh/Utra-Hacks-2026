@@ -80,13 +80,10 @@ void spin180(int spd){
 // MH-B: LOW = black line detected, HIGH = white
 
 void followLine(){
-  int left  = digitalRead(IR_LEFT);
-  int right = digitalRead(IR_RIGHT);
-
-  if((left == LOW && right == LOW)|| (left == HIGH && right == LOW)){
+  if((detectColor() =="GREEN" ) || (detectColor() =="BLACK" ) || (detectColor() =="RED" ){
     turnRight(30);
   }
-  else if(left == LOW && right == HIGH){
+  else{
     turnLeft(30);
   }
 }
@@ -284,15 +281,8 @@ void setup(){
 
 
 void loop(){
-  if(detectColor() =="GREEN" ){
-    turnRight(30);
-  }
-  else{
-    turnLeft(30);
-  }
   
-  
-  /*// Detect path split (green/red)
+  // Detect path split (green/red)
   // Move to BLUE zone to drop box
   while(detectColor() != "BLUE"){
     followLine();
@@ -381,5 +371,5 @@ void loop(){
     followLine();
   }
 
-  stopMotors();*/
+  stopMotors();
 }
