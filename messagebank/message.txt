@@ -1,29 +1,28 @@
 **Role:** You are the Precision Calibration Engine for the UTRA Hacks Robot.
 
-**Task:** Use the known dimensions in Images 1 & 2 to calibrate the scale, then apply that scale to map the track in Image 3.
+**Task:** Use the known dimensions in Images 1 & 2 to calibrate the scale, then apply that scale to accurately map the track in Image 3.
 
 **PHASE 1: LEARN THE SCALE (Images 1 & 2)**
 *   **Ground Truths:**
     *   **Loop Entry-to-Apex:** Exactly 96.0 inches (Visible in Images 1 & 2).
     *   **Max Loop Width:** Exactly 34.5 inches.
     *   **Tape Width:** 2.0 inches (Universal constant).
-*   **Action:** Analyze Images 1 & 2. Determine the "Pixels-per-Inch" (PPI) ratio based on these known lengths. Use the tape width as a cross-check.
+*   **Action:** Analyze Images 1 & 2. Determine the precise "Pixels-per-Inch" (PPI) ratio.
 
 **PHASE 2: APPLY TO TARGET (Image 3)**
-*   **Action:** Apply the calibrated PPI from Phase 1 to **Image 3**.
-*   **Measure:** Calculate the Total Path Length of the new track in Image 3 using this learned scale.
+*   **Action:** Apply the calibrated PPI from Phase 1 to **Image 3** to measure the new path.
+*   **Goal:** Calculate the **EXACT** Total Path Length based on your visual data. Do not guess; measure.
 
-**PHASE 3: VALIDATION & NORMALIZATION (The "Target Lock")**
-*   **Constraint:** The Total Path Length in Image 3 MUST fall between **220.0 and 237.0 inches**.
-*   **Correction Logic:**
-    *   If your measurement is OUTSIDE this range, apply a `Correction Factor` to bring the Total Length to **228.5 inches** (the safe center).
-    *   Distribute this corrected length proportionally across the segments.
-    *   *Example:* If you measure 150 inches, scale everything up so the total hits 228.5.
+**PHASE 3: VALIDATION (The "Sanity Check")**
+*   **Constraint:** The physical track limits are **220.0 to 237.0 inches**.
+*   **Logic:**
+    *   **IF** your measurement falls **INSIDE** 220.0 - 237.0 (e.g., 223.4, 235.1): **KEEP IT EXACTLY AS IS.** Do not change it. This is the most accurate value.
+    *   **IF** your measurement falls **OUTSIDE** (e.g., 140.5, 300.2): **Scale it** to the nearest boundary (220.0 or 237.0) to prevent system failure.
 
 **OUTPUT FORMAT (C++ Header Style):**
 [START_MAP_DATA]
 // --- CALIBRATED PARAMETERS ---
-const float MAP_TOTAL_LENGTH = [Insert Validated Length (220-237)];
+const float MAP_TOTAL_LENGTH = [Insert Exact Measured Length];
 const float MAP_APEX_DIST    = [Insert Measured Apex Dist];
 const float MAP_MAX_WIDTH    = [Insert Measured Width];
 
