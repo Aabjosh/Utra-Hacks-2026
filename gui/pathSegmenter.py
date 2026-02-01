@@ -35,7 +35,7 @@ with open( SAMPLE_IMAGE_2_DIRECT , "rb" ) as f:
     imageBytes2 = f.read()
 
 response = client.models.generate_content(
-    model="gemini-2.5-flash-preview",
+    model="gemini-3-flash-preview",
     contents=[
         types.Content(
             role="user",

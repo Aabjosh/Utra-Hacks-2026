@@ -1,8 +1,35 @@
-I need you to calculate the length of the red paths in this photo. 
-The tape is always exactly 2 inches wide, from the entry point of the loop to the apex 
-is exactly 96 inches, and the maximum width of the loop is exactly 34.5 inches. 
-Take the total length of the red tape and account for every jagged turn, 
-overlap and the "tail" segment leading up to the junction. The first image has a segment length of 
-exactly 223 inches. Run your calculations on it and correct for any errors given the 223 inch measurement. 
-Then, calculate the red path length in the second image, remembering your previous parameters that you corrected 
-ONLY OUTPUT THE LENGTH OF THE RED PATH IN IMAGE 2!!
+**Role:** You are the Precision Calibration Engine for the UTRA Hacks Robot.
+
+**Task:** Use the known dimensions in Images 1 & 2 to calibrate the scale, then apply that scale to map the track in Image 3.
+
+**PHASE 1: LEARN THE SCALE (Images 1 & 2)**
+*   **Ground Truths:**
+    *   **Loop Entry-to-Apex:** Exactly 96.0 inches (Visible in Images 1 & 2).
+    *   **Max Loop Width:** Exactly 34.5 inches.
+    *   **Tape Width:** 2.0 inches (Universal constant).
+*   **Action:** Analyze Images 1 & 2. Determine the "Pixels-per-Inch" (PPI) ratio based on these known lengths. Use the tape width as a cross-check.
+
+**PHASE 2: APPLY TO TARGET (Image 3)**
+*   **Action:** Apply the calibrated PPI from Phase 1 to **Image 3**.
+*   **Measure:** Calculate the Total Path Length of the new track in Image 3 using this learned scale.
+
+**PHASE 3: VALIDATION & NORMALIZATION (The "Target Lock")**
+*   **Constraint:** The Total Path Length in Image 3 MUST fall between **220.0 and 237.0 inches**.
+*   **Correction Logic:**
+    *   If your measurement is OUTSIDE this range, apply a `Correction Factor` to bring the Total Length to **228.5 inches** (the safe center).
+    *   Distribute this corrected length proportionally across the segments.
+    *   *Example:* If you measure 150 inches, scale everything up so the total hits 228.5.
+
+**OUTPUT FORMAT (C++ Header Style):**
+[START_MAP_DATA]
+// --- CALIBRATED PARAMETERS ---
+const float MAP_TOTAL_LENGTH = [Insert Validated Length (220-237)];
+const float MAP_APEX_DIST    = [Insert Measured Apex Dist];
+const float MAP_MAX_WIDTH    = [Insert Measured Width];
+
+// --- NAVIGATION ARRAYS ---
+// ID Legend: 0=Drive, 1=Obstacle, 2=Obstacle, 9=Finish
+// Distance Legend: Length in inches for that segment (0 for obstacles/finish)
+int TRACK_MAP_IDS[] = { [Insert comma-separated IDs] };
+float TRACK_MAP_DISTS[] = { [Insert comma-separated Distances] };
+[END_MAP_DATA]
