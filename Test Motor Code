@@ -1,31 +1,42 @@
 #include <Servo.h>
 
-// ===================== MOTORS =====================
+// ===================== MOTORS (YOUR PIN MAP) =====================
 // Motor A (LEFT MOTOR)
-int IN1 = 11;   // was 8
-int IN2 = 8;    // was 9
-int ENA = 9;    // was 10, now D9
+int IN1 = 11;   // IN1 -> D11
+int IN2 = 8;    // IN2 -> D8
+int ENA = 9;    // ENA -> D9 (PWM)
 
 // Motor B (RIGHT MOTOR)
-int IN3 = 12;   // was 6
-int IN4 = 13;   // was 7
-int ENB = 10;   // was 5, now D10
+int IN3 = 12;   // IN3 -> D12
+int IN4 = 13;   // IN4 -> D13
+int ENB = 10;   // ENB -> D10 (PWM)
 
 // ===================== IR SENSORS =====================
 int IR_LEFT  = 2; // D2
 int IR_RIGHT = 3; // D3
 
 // ===================== ULTRASONIC (HY-SRF05) =====================
-// moved because D12/D13 are now motor pins
 #define TRIG_PIN 6
 #define ECHO_PIN 7
 
 // ===================== SERVOS =====================
-// moved because D11 is now IN1
-#define SERVO1_PIN 4   // servo 1
-#define SERVO2_PIN 5   // servo 2
+#define SERVO1_PIN 4   // Servo 1 moves when LEFT IR is black
+#define SERVO2_PIN 5   // Servo 2 moves when RIGHT IR is black
 Servo servo1;
 Servo servo2;
+
+const int SERVO_CENTER   = 90;
+const int SERVO1_ACTIVE  = 150;
+const int SERVO2_ACTIVE  = 30;
+
+// ===================== COLOR SENSOR (TCS3200-style, V575 model) =====================
+// NOTE: You cannot have S3 and OUT both on A4.
+// Use: S3 -> A3, OUT -> A4
+#define CS_S0   A0
+#define CS_S1   A1
+#define CS_S2   A2
+#define CS_S3   A3
+#define CS_OUT  A4
 
 // ===================== SERIAL CONTROL =====================
 bool running = true;
@@ -34,11 +45,14 @@ bool running = true;
 int SPEED_LEFT  = 200;
 int SPEED_RIGHT = 200;
 
-// Servo positions (edit if you want)
-const int SERVO_CENTER   = 90;
-const int SERVO1_ACTIVE  = 150;  // Servo1 moves when LEFT IR is black
-const int SERVO2_ACTIVE  = 30;   // Servo2 moves when RIGHT IR is black
+// ===================== COLOR STRUCT (MUST BE ABOVE FUNCTIONS) =====================
+struct RGBPulse {
+  unsigned long r;
+  unsigned long g;
+  unsigned long b;
+};
 
+// ===================== ULTRASONIC =====================
 float readUltrasonicCM() {
   long duration;
 
@@ -49,13 +63,13 @@ float readUltrasonicCM() {
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
 
-  duration = pulseIn(ECHO_PIN, HIGH, 30000); // ~30ms timeout
+  duration = pulseIn(ECHO_PIN, HIGH, 30000);
   if (duration == 0) return -1.0;
 
   return (duration * 0.0343) / 2.0;
 }
 
-// ===================== MOTOR HELPERS =====================
+// ===================== MOTORS =====================
 void motorsStop() {
   analogWrite(ENA, 0);
   analogWrite(ENB, 0);
@@ -89,6 +103,47 @@ void turnRight() {
   analogWrite(ENA, SPEED_LEFT);
 }
 
+// ===================== COLOR SENSOR =====================
+unsigned long readPulseFiltered(bool s2, bool s3) {
+  digitalWrite(CS_S2, s2 ? HIGH : LOW);
+  digitalWrite(CS_S3, s3 ? HIGH : LOW);
+  delay(2); // settle
+
+  // We measure LOW pulse width. Smaller pulse => more of that color.
+  unsigned long p = pulseIn(CS_OUT, LOW, 20000);
+  if (p == 0) p = 20000; // timeout => weak signal
+  return p;
+}
+
+RGBPulse readRGB() {
+  RGBPulse v;
+
+  // Typical TCS3200 filter select:
+  // RED:   S2=LOW,  S3=LOW
+  // BLUE:  S2=LOW,  S3=HIGH
+  // GREEN: S2=HIGH, S3=HIGH
+  v.r = readPulseFiltered(false, false);
+  v.b = readPulseFiltered(false, true);
+  v.g = readPulseFiltered(true,  true);
+
+  return v;
+}
+
+const char* classifyColor(const RGBPulse& v) {
+  // Super simple heuristic; best results after calibration.
+  unsigned long sum = v.r + v.g + v.b;
+
+  if (sum > 45000) return "BLACK/DARK";
+  if (sum < 9000)  return "WHITE/BRIGHT";
+
+  // Dominant color = smallest pulse
+  if (v.r < v.g && v.r < v.b) return "RED-ish";
+  if (v.g < v.r && v.g < v.b) return "GREEN-ish";
+  if (v.b < v.r && v.b < v.g) return "BLUE-ish";
+
+  return "UNKNOWN";
+}
+
 void setup() {
   // Motor pins
   pinMode(IN1, OUTPUT);
@@ -110,22 +165,28 @@ void setup() {
   servo1.write(SERVO_CENTER);
   servo2.write(SERVO_CENTER);
 
+  // Color sensor pins
+  pinMode(CS_S0, OUTPUT);
+  pinMode(CS_S1, OUTPUT);
+  pinMode(CS_S2, OUTPUT);
+  pinMode(CS_S3, OUTPUT);
+  pinMode(CS_OUT, INPUT);
+
+  // Frequency scaling (common): S0=HIGH, S1=HIGH
+  digitalWrite(CS_S0, HIGH);
+  digitalWrite(CS_S1, HIGH);
+
   Serial.begin(9600);
-  Serial.println("=== Robot: IR + Motors + Ultrasonic + 2 Servos (UPDATED PINS) ===");
-  Serial.println("Commands: 'p' = pause, 'r' = run");
+  Serial.println("=== Robot + Color Sensor Debug ===");
+  Serial.println("Commands: p=pause, r=run");
 }
 
 void loop() {
   // ---------- SERIAL CONTROL ----------
   if (Serial.available()) {
     char cmd = Serial.read();
-    if (cmd == 'p') {
-      running = false;
-      Serial.println("== PAUSED ==");
-    } else if (cmd == 'r') {
-      running = true;
-      Serial.println("== RUNNING ==");
-    }
+    if (cmd == 'p') { running = false; Serial.println("== PAUSED =="); }
+    else if (cmd == 'r') { running = true; Serial.println("== RUNNING =="); }
   }
 
   // ---------- READ SENSORS ----------
@@ -133,14 +194,12 @@ void loop() {
   int rightIR = digitalRead(IR_RIGHT);
   float distCM = readUltrasonicCM();
 
-  // ---------- SERVO LOGIC ----------
-  // Servo1 moves when LEFT IR is BLACK (LOW)
-  if (leftIR == LOW) servo1.write(SERVO1_ACTIVE);
-  else servo1.write(SERVO_CENTER);
+  RGBPulse rgb = readRGB();
+  const char* colorName = classifyColor(rgb);
 
-  // Servo2 moves when RIGHT IR is BLACK (LOW)
-  if (rightIR == LOW) servo2.write(SERVO2_ACTIVE);
-  else servo2.write(SERVO_CENTER);
+  // ---------- SERVO LOGIC ----------
+  servo1.write(leftIR == LOW ? SERVO1_ACTIVE : SERVO_CENTER);
+  servo2.write(rightIR == LOW ? SERVO2_ACTIVE : SERVO_CENTER);
 
   // ---------- MOTOR LOGIC ----------
   const char* action = "STOP";
@@ -164,27 +223,28 @@ void loop() {
     }
   }
 
-  // ---------- SERIAL REPORT ----------
+  // ---------- SERIAL OUTPUT ----------
   Serial.print("IR_L=");
   Serial.print(leftIR == LOW ? "BLACK" : "WHITE");
   Serial.print(" | IR_R=");
   Serial.print(rightIR == LOW ? "BLACK" : "WHITE");
 
-  Serial.print(" | SERVO1=");
-  Serial.print(leftIR == LOW ? SERVO1_ACTIVE : SERVO_CENTER);
-
-  Serial.print(" | SERVO2=");
-  Serial.print(rightIR == LOW ? SERVO2_ACTIVE : SERVO_CENTER);
-
   Serial.print(" | US=");
   if (distCM < 0) Serial.print("NoEcho");
-  else {
-    Serial.print(distCM);
-    Serial.print("cm");
-  }
+  else { Serial.print(distCM); Serial.print("cm"); }
+
+  Serial.print(" | RGBpulse R=");
+  Serial.print(rgb.r);
+  Serial.print(" G=");
+  Serial.print(rgb.g);
+  Serial.print(" B=");
+  Serial.print(rgb.b);
+
+  Serial.print(" | COLOR=");
+  Serial.print(colorName);
 
   Serial.print(" | STATE=");
   Serial.println(action);
 
-  delay(100);
+  delay(150);
 }
