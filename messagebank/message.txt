@@ -2,6 +2,7 @@ I need you to calculate the length of the red paths in this photo.
 The tape is always exactly 2 inches wide, from the entry point of the loop to the apex 
 is exactly 96 inches, and the maximum width of the loop is exactly 34.5 inches. 
 Take the total length of the red tape and account for every jagged turn, 
-overlap and the "tail" segment leading up to the junction. The first and second images have a segment length of 
+overlap and the "tail" segment leading up to the junction. The first image has a segment length of 
 exactly 223 inches. Run your calculations on it and correct for any errors given the 223 inch measurement. 
-Remember your parameters.
+Then, calculate the red path length in the second image, remembering your previous parameters that you corrected 
+ONLY OUTPUT THE LENGTH OF THE RED PATH IN IMAGE 2!!

@@ -1,1 +1,1 @@
-Hello. This is a test message. Just say your model name, the date and time.
+ONLY PRINT OUT THE FOLLOWING NUMBERS: $THICKNESS$, $LENGTH$, $WIDTH$
