@@ -2,13 +2,13 @@
 
 
 // Motor Driver 
-int ENA = 10;   // PWM speed left motor
-int IN1 = 8;
-int IN2 = 9;
+int ENA = 9;   // PWM speed left motor
+int IN1 = 11;
+int IN2 = 8;
 
-int ENB = 5;   // PWM speed right motor
-int IN3 = 6;
-int IN4 = 7;
+int ENB = 10;   // PWM speed right motor
+int IN3 = 12;
+int IN4 = 13;
 
 // IR Line Sensors 
 int IR_LEFT  = 2;
@@ -19,17 +19,18 @@ int S0 = A0;      // Frequency scaling
 int S1 = A1;      // Frequency scaling
 int S2 = A2;      // Color filter select
 int S3 = A3;      // Color filter select
-int sensorOut = 4; // Frequency output
+int sensorOut = A4; // Frequency output////////////////////cahnge
 
 // Ultrasonic Sensor 
-int TRIG_PIN = 12;
-int ECHO_PIN = 13;
+int TRIG_PIN = 6;
+int ECHO_PIN = 7;
+int angle =90;
 
 // Servos 
 Servo clawServo;
 Servo ultrasonicServo;  // Servo to rotate ultrasonic sensor
-int CLAW_PIN = A3;
-int ULTRASONIC_SERVO_PIN = A4;
+int CLAW_PIN = 4;
+int ULTRASONIC_SERVO_PIN = 5;
 
 
 void setLeftMotor(int speed, bool forward){
@@ -50,8 +51,8 @@ void moveForward(int spd){
 }
 
 void moveBackward(int spd){
-  setLeftMotor(-spd, true);
-  setRightMotor(-spd, true);
+  setLeftMotor(spd, false);
+  setRightMotor(spd, false);
 }
 
 void stopMotors(){
@@ -71,7 +72,7 @@ void turnRight(int spd){
 
 void spin180(int spd){
   setLeftMotor(spd, true);
-  setRightMotor(-spd, true);
+  setRightMotor(spd, false);
   delay(1000);
   stopMotors();
 }
@@ -83,10 +84,10 @@ void followLine(){
   int right = digitalRead(IR_RIGHT);
 
   if((left == LOW && right == LOW)|| (left == HIGH && right == LOW)){
-    turnRight(120);
+    turnRight(30);
   }
   else if(left == LOW && right == HIGH){
-    turnLeft(120);
+    turnLeft(30);
   }
 }
 
@@ -121,12 +122,12 @@ String detectColor(){
   
   
   // Check for BLACK (all frequencies high/similar)
-  if(redFreq > 200 && greenFreq > 200 && blueFreq > 200){
+  if(redFreq > 120 && greenFreq > 120 && blueFreq > 120){
     return "BLACK";
   }
   
   // Check for WHITE (all frequencies low/similar)
-  if(redFreq < 50 && greenFreq < 50 && blueFreq < 50){
+  if(redFreq < 40 && greenFreq < 40 && blueFreq < 40){
     return "WHITE";
   }
   
@@ -134,11 +135,11 @@ String detectColor(){
   if(redFreq < greenFreq && redFreq < blueFreq){
     return "RED";
   }
-  else if(greenFreq < redFreq && greenFreq < blueFreq){
-    return "GREEN";
-  }
   else if(blueFreq < redFreq && blueFreq < greenFreq){
     return "BLUE";
+  }
+  else if(greenFreq < redFreq && greenFreq < blueFreq){
+    return "GREEN";
   }
   
   return "WHITE";  // Default
@@ -191,14 +192,14 @@ long scanForObstacle(){
 
 void dropBox(){
   stopMotors();
-  turnRight(120);
+  turnRight(30);
   delay(1000);
   stopMotors();
-  moveForward(120);
+  moveForward(30);
   delay(300);
-  clawServo.write(120);   // open claw
+  clawServo.write(30);   // open claw
   delay(800);
-  moveBackward(120);
+  moveBackward(30);
   delay(300);
   turnLeft(90);
   delay(1000);
@@ -207,14 +208,14 @@ void dropBox(){
 
 void getBox(){
   stopMotors();
-  turnLeft(120);
+  turnLeft(30);
   delay(1000);
   stopMotors();
-  moveForward(120);
+  moveForward(30);
   delay(300);
   clawServo.write(0);   // close claw
   delay(800);
-  moveBackward(120);
+  moveBackward(30);
   delay(300);
   turnRight(90);
   delay(1000);
@@ -277,7 +278,7 @@ void setup(){
   ultrasonicServo.attach(ULTRASONIC_SERVO_PIN);
   
   clawServo.write(30);    // closed
-  ultrasonicServo.write(90); // center position
+  ultrasonicServo.write(angle); // center position
   delay(500);
 }
 
@@ -293,55 +294,83 @@ void loop(){
 
   getBox();
 
-  if(detectColor() == "GREEN"){
-    dropBox();
-    while(detectColor() != "BLUE"){
-      goToTargetCenter();
-    }
-    clawServo.write(0);   // close claw
-    delay(1000);
-    while(detectColor() != "BLUE"){
-      moveForward(100);
-    }
-    stopMotors();
-    clawServo.write(120);   // close claw
-    moveBackward(100);
-    delay(400);
-    spin180();
-    moveForward(100);
-    while(detectColor() != "BLACK"){
-      delay(50);
-    }
-    stopMotors();
-    while(detectColor() != "BLUE"){
-      followLine();
-    }
-    getBox();
-    while(getDistance()>70){
-      followLine();
-    }
-    turnRight(120);
-    delay(300);
-    moveForward(100);
-    while(getDistance()<100)
-
-
-
-  }
-  
-  
-  
-
-  // Do GREEN first (go to target center)
-  if(color == "GREEN"){
-    goToTargetCenter();
-  }
-
-  // Then obstacle course
-  obstacleCourse();
-
-  // Return to start (blue)
+  dropBox();
+  goToTargetCenter();
+  clawServo.write(0);   // close claw
+  delay(1000);
   while(detectColor() != "BLUE"){
+    moveForward(10);
+    delay(50);
+  }
+  stopMotors();
+  clawServo.write(120);   // close claw
+  moveBackward(50);
+  delay(400);
+  spin180(50);
+  moveForward(30);
+  while(detectColor() != "BLACK"){
+    delay(50);
+  }
+  stopMotors();
+  while(detectColor() != "BLUE"){
+    followLine();
+  }
+  getBox();
+  while(getDistance()>10){
+    followLine();
+  }
+  turnRight(30);
+  delay(300);
+  moveForward(30);
+  delay(300);
+  stopMotors();
+  while(getDistance()>20){
+    angle--;
+    ultrasonicServo.write(angle);
+    delay(100);
+  }
+  while((digitalRead(IR_RIGHT)==LOW) && (digitalRead(IR_LEFT)==LOW)){
+    if(getDistance()<=10){
+      turnRight(30);
+    }
+    else{
+      turnLeft(30);
+    }
+  }
+  angle = 90;
+  ultrasonicServo.write(angle);
+  delay(300);
+
+  while(getDistance()>10){
+    followLine();
+  }
+  turnRight(30);
+  delay(300);
+  moveForward(30);
+  delay(300);
+  stopMotors();
+  while(getDistance()>20){
+    angle--;
+    ultrasonicServo.write(angle);
+    delay(100);
+  }
+  while((digitalRead(IR_RIGHT)==LOW) && (digitalRead(IR_LEFT)==LOW)){
+    if(getDistance()<=10){
+      turnRight(30);
+    }
+    else{
+      turnLeft(30);
+    }
+  }
+  angle = 90;
+  ultrasonicServo.write(angle);
+  delay(300);
+
+  while(detectColor() != "BLUE"){
+    followLine();
+  }
+  dropBox();
+  while(detectColor() != "BLACK"){
     followLine();
   }
 
