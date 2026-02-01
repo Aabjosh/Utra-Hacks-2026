@@ -189,14 +189,14 @@ long scanForObstacle(){
 
 void dropBox(){
   stopMotors();
-  turnRight(30);
+  turnRight(90);
   delay(1000);
   stopMotors();
-  moveForward(30);
+  moveForward(90);
   delay(300);
-  clawServo.write(30);   // open claw
+  clawServo.write(90);   // open claw
   delay(800);
-  moveBackward(30);
+  moveBackward(90);
   delay(300);
   turnLeft(90);
   delay(1000);
@@ -205,14 +205,14 @@ void dropBox(){
 
 void getBox(){
   stopMotors();
-  turnLeft(30);
+  turnLeft(90);
   delay(1000);
   stopMotors();
-  moveForward(30);
+  moveForward(90);
   delay(300);
   clawServo.write(0);   // close claw
   delay(800);
-  moveBackward(30);
+  moveBackward(90);
   delay(300);
   turnRight(90);
   delay(1000);
@@ -224,26 +224,6 @@ void goToTargetCenter(){
   }
   stopMotors();
   delay(400);
-}
-
-void obstacleCourse(){
-  while(true){
-    long d = getDistance();
-
-    if(d < 15){
-      // Scan to find best path
-      stopMotors();
-      delay(100);
-      scanForObstacle();
-      
-      turnRight(130);
-      delay(350);
-    } else {
-      followLine();
-    }
-
-    if(detectColor() == "WHITE") break;
-  }
 }
 
 void setup(){
@@ -296,15 +276,15 @@ void loop(){
   clawServo.write(0);   // close claw
   delay(1000);
   while(detectColor() != "BLUE"){
-    moveForward(10);
+    moveForward(90);
     delay(50);
   }
   stopMotors();
   clawServo.write(120);   // close claw
-  moveBackward(50);
+  moveBackward(90);
   delay(400);
-  spin180(50);
-  moveForward(30);
+  spin180(90);
+  moveForward(90);
   while(detectColor() != "BLACK"){
     delay(50);
   }
@@ -316,9 +296,9 @@ void loop(){
   while(getDistance()>10){
     followLine();
   }
-  turnRight(30);
+  turnRight(90);
   delay(300);
-  moveForward(30);
+  moveForward(90);
   delay(300);
   stopMotors();
   while(getDistance()>20){
@@ -328,10 +308,10 @@ void loop(){
   }
   while((digitalRead(IR_RIGHT)==LOW) && (digitalRead(IR_LEFT)==LOW)){
     if(getDistance()<=10){
-      turnRight(30);
+      turnRight(90);
     }
     else{
-      turnLeft(30);
+      turnLeft(90);
     }
   }
   angle = 90;
@@ -341,9 +321,9 @@ void loop(){
   while(getDistance()>10){
     followLine();
   }
-  turnRight(30);
+  turnRight(90);
   delay(300);
-  moveForward(30);
+  moveForward(90);
   delay(300);
   stopMotors();
   while(getDistance()>20){
@@ -353,10 +333,10 @@ void loop(){
   }
   while((digitalRead(IR_RIGHT)==LOW) && (digitalRead(IR_LEFT)==LOW)){
     if(getDistance()<=10){
-      turnRight(30);
+      turnRight(90);
     }
     else{
-      turnLeft(30);
+      turnLeft(90);
     }
   }
   angle = 90;
