@@ -2,16 +2,20 @@
 
 **Task:** Analyze the track in Image 3 (using Images 1 & 2 for scale) and output the raw navigation data.
 
-**CALIBRATION RULES:**
-1.  Use the **2-inch tape width** and the known **96" Apex / 34.5" Width** from Images 1 & 2 to determine the exact scale of Image 3.
-2.  Calculate the **Total Track Length** (Target Range: 220.0 - 237.0 inches).
-3.  **Map Generation:** Create a segment array where **EVERY SINGLE INTEGER** represents **ONE INCH** of the track.
-    *   If the track is 230 inches long, the array MUST have 230 entries.
-    *   Fill the array with IDs based on what is at that specific inch:
-        *   **0**: Plain Red Track
-        *   **1**: Obstacle (Cardboard Prism) - Mark this for the ~5 inches occupied by the prism.
-        *   **2**: First Blue Square Checkpoint (Blue tape marker #1).
-        *   **3**: Second Blue Square Checkpoint (Blue tape marker #2).
+**CALIBRATION & SCALING:**
+1.  **Transfer Learning:** Use the **2-inch tape width** and the known **96" Apex / 34.5" Width** from Images 1 & 2 to determine the exact "Pixels-per-Inch" (PPI) for Image 3.
+2.  **Visual Measurement:** Measure the track in Image 3 using this PPI. Do NOT force values to a target center; use the visual data directly.
+3.  **Sanity Check Ranges (Guard Rails):**
+    *   **Total Length:** Must fall between **220.0 - 237.0 inches**.
+    *   **Obstacle Spacing:** The distance between Obstacle 1 and Obstacle 2 MUST fall between **60.0 - 80.0 inches**.
+    *   *Correction Logic:* Only if your measurement is OUTSIDE these ranges (e.g., 90"), re-evaluate the scale to bring it barely inside the nearest boundary (e.g., 80"). If it is inside (e.g., 68" or 75"), KEEP IT EXACTLY AS MEASURED.
+
+**MAP GENERATION (Inch-by-Inch):**
+Create an array where **EVERY ENTRY** represents **ONE INCH** of the track.
+*   **0**: Plain Red Track
+*   **1**: Obstacle (Cardboard Prism) - Mark for ~5 inches.
+*   **2**: First Blue Square Checkpoint.
+*   **3**: Second Blue Square Checkpoint.
 
 **OUTPUT FORMAT (STRICT):**
 Output exactly two lines. Nothing else.
@@ -21,4 +25,4 @@ Output exactly two lines. Nothing else.
 
 **Example Output:**
 228.5
-0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 0, 0, 0... [continuing for 228 entries]
+0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0... [continuing for the exact length]
