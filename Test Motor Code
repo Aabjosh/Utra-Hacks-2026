@@ -1,0 +1,200 @@
+#include <Servo.h>
+
+// ===================== MOTORS =====================
+// Motor A (LEFT MOTOR)
+int IN1 = 8;
+int IN2 = 9;
+int ENA = 10;
+
+// Motor B (RIGHT MOTOR)
+int IN3 = 6;
+int IN4 = 7;
+int ENB = 5;
+
+// ===================== IR SENSORS =====================
+int IR_LEFT  = 2; // D2
+int IR_RIGHT = 3; // D3
+
+// ===================== ULTRASONIC (HY-SRF05) =====================
+#define TRIG_PIN 12
+#define ECHO_PIN 13
+
+// ===================== SERVOS =====================
+#define SERVO1_PIN 11  // first servo
+#define SERVO2_PIN 4   // second servo
+Servo servo1;
+Servo servo2;
+
+// ===================== SERIAL CONTROL =====================
+// Send 'p' to pause, 'r' to run
+bool running = true;
+
+// Tuning
+int SPEED_LEFT  = 200;
+int SPEED_RIGHT = 200;
+
+// Servo motion settings
+const int SERVO_CENTER = 90;
+const int SERVO_LEFT_POS = 150;   // servo1 moves here when LEFT IR is black
+const int SERVO_RIGHT_POS = 30;   // servo2 moves here when RIGHT IR is black
+
+float readUltrasonicCM() {
+  long duration;
+
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  duration = pulseIn(ECHO_PIN, HIGH, 30000); // timeout ~30ms
+  if (duration == 0) return -1.0;
+
+  return (duration * 0.0343) / 2.0;
+}
+
+// ===================== MOTOR HELPERS =====================
+void motorsStop() {
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+}
+
+void motorsForward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, SPEED_LEFT);
+  analogWrite(ENB, SPEED_RIGHT);
+}
+
+void turnLeft() {
+  // Left motor stop, right motor forward
+  analogWrite(ENA, 0);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENB, SPEED_RIGHT);
+}
+
+void turnRight() {
+  // Right motor stop, left motor forward
+  analogWrite(ENB, 0);
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  analogWrite(ENA, SPEED_LEFT);
+}
+
+void setup() {
+  // Motor pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  // IR pins
+  pinMode(IR_LEFT, INPUT);
+  pinMode(IR_RIGHT, INPUT);
+
+  // Ultrasonic pins
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // Servos
+  servo1.attach(SERVO1_PIN);
+  servo2.attach(SERVO2_PIN);
+  servo1.write(SERVO_CENTER);
+  servo2.write(SERVO_CENTER);
+
+  Serial.begin(9600);
+  Serial.println("=== Robot: IR + Motors + Ultrasonic + 2 Servos ===");
+  Serial.println("Commands: 'p' = pause, 'r' = run");
+}
+
+void loop() {
+  // ---------- SERIAL CONTROL ----------
+  if (Serial.available()) {
+    char cmd = Serial.read();
+    if (cmd == 'p') {
+      running = false;
+      Serial.println("== PAUSED ==");
+    } else if (cmd == 'r') {
+      running = true;
+      Serial.println("== RUNNING ==");
+    }
+  }
+
+  // ---------- READ SENSORS ----------
+  int leftIR  = digitalRead(IR_LEFT);
+  int rightIR = digitalRead(IR_RIGHT);
+  float distCM = readUltrasonicCM();
+
+  // ---------- SERVO LOGIC ----------
+  // Servo1 moves when LEFT IR is BLACK
+  if (leftIR == LOW) servo1.write(SERVO_LEFT_POS);
+  else servo1.write(SERVO_CENTER);
+
+  // Servo2 moves when RIGHT IR is BLACK
+  if (rightIR == LOW) servo2.write(SERVO_RIGHT_POS);
+  else servo2.write(SERVO_CENTER);
+
+  // ---------- MOTOR LOGIC ----------
+  const char* action = "STOP";
+
+  if (!running) {
+    motorsStop();
+    action = "PAUSED";
+  } else {
+    // BOTH BLACK → FORWARD
+    if (leftIR == LOW && rightIR == LOW) {
+      motorsForward();
+      action = "FORWARD";
+    }
+    // LEFT BLACK → TURN LEFT
+    else if (leftIR == LOW) {
+      turnLeft();
+      action = "TURN LEFT";
+    }
+    // RIGHT BLACK → TURN RIGHT
+    else if (rightIR == LOW) {
+      turnRight();
+      action = "TURN RIGHT";
+    }
+    // BOTH WHITE → STOP
+    else {
+      motorsStop();
+      action = "STOP";
+    }
+  }
+
+  // ---------- SERIAL REPORT ----------
+  Serial.print("IR_L=");
+  Serial.print(leftIR);
+  Serial.print(leftIR == LOW ? "(BLACK)" : "(WHITE)");
+
+  Serial.print(" | IR_R=");
+  Serial.print(rightIR);
+  Serial.print(rightIR == LOW ? "(BLACK)" : "(WHITE)");
+
+  Serial.print(" | SERVO1=");
+  Serial.print(leftIR == LOW ? SERVO_LEFT_POS : SERVO_CENTER);
+
+  Serial.print(" | SERVO2=");
+  Serial.print(rightIR == LOW ? SERVO_RIGHT_POS : SERVO_CENTER);
+
+  Serial.print(" | US=");
+  if (distCM < 0) {
+    Serial.print("NoEcho");
+  } else {
+    Serial.print(distCM);
+    Serial.print("cm");
+  }
+
+  Serial.print(" | STATE=");
+  Serial.println(action);
+
+  delay(100);
+}
