@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Generate File</title>
+    <title>Upload Image</title>
 </head>
 <body>
-    <h1>Enter your info</h1>
-    <form method="POST">
-        Name: <input type="text" name="name" required><br><br>
-        Age: <input type="number" name="age" required><br><br>
-        <button type="submit">Generate File</button>
+    <h1>Upload an Image</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <br><br>
+        <button type="submit">Upload</button>
     </form>
 </body>
 </html>
