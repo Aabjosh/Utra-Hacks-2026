@@ -1,0 +1,102 @@
+
+#define S0 AO
+#define S1 A1
+#define S2 A2
+#define S3 A3
+#define sensorOut A4
+#define NO_COLOR_THRESHOLD 180
+
+int redFrequency = 0;
+int greenFrequency = 0;
+int blueFrequency = 0;
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode( S0, OUTPUT);
+  pinMode( S1, OUTPUT);
+  pinMode( S2, OUTPUT);
+  pinMode( S3, OUTPUT);
+  pinMode( sensorOut, INPUT);
+  Serial.begin(9600);
+
+  digitalWrite(S0, HIGH);
+  digitalWrite(S1, LOW);
+}
+int readColor() {
+  long sum = 0;
+  for (int i = 0; i < 5; i++) {
+    sum += pulseIn(sensorOut, LOW);
+  }
+  return sum / 5;
+}
+
+//black is 1, white is 2, red is 3, blue is 4 , green is 5)
+int gimmeColor(int r, int b, int g) {
+
+  // Black
+  if (r > 120 && g > 120 && b > 120) {
+    return 1;
+  }
+
+  // White
+  if (r < 40 && g < 40 && b < 40) {
+    return 2;
+  }
+
+  // Red
+  if (r < g && r < b && r < 60) {
+    return 3;
+  }
+
+  // Blue
+  if (b < r && b < g && b < 60) {
+    return 4;
+  }
+
+  // Green
+  if (g < r && g < b && g < 60) {
+    return 5;
+  }
+
+  return 0; // unknown
+}
+
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,LOW);
+  redFrequency= readColor();
+
+
+  digitalWrite(S2,HIGH);
+  digitalWrite(S3,HIGH);
+  greenFrequency= pulseIn(sensorOut, LOW);
+
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,HIGH);
+  blueFrequency= pulseIn(sensorOut, LOW);
+
+  
+  if (redFrequency > NO_COLOR_THRESHOLD && 
+      greenFrequency > NO_COLOR_THRESHOLD && 
+      blueFrequency > NO_COLOR_THRESHOLD) {
+    Serial.println("No color detected");
+  } else {
+    Serial.print("R= ");
+    Serial.print(redFrequency);
+    Serial.print(" G= ");
+    Serial.print(greenFrequency);
+    Serial.print(" B= ");
+    Serial.println(blueFrequency);
+    Serial.println( gimmeColor(redFrequency, blueFrequency, greenFrequency));
+  }
+  delay(100);
+}
+
+
+
