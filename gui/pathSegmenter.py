@@ -68,7 +68,15 @@ def runImageProcessor( imageFromApp ):
         ]
     )
 
-    print( response.text )
+    output = response.text.split("\n")
+
+    valueListOutput = "{" + output[1] + "}"
+    
+    with open( "mapconstants.h" , "w" ) as outfile:
+        outfile.write( "#ifndef MAPCONSTANTS_H\n#define MAPCONSTANTS_H\n\n" )
+        outfile.write( "const int LENGTH = " + str( output[0] ) + ";\n" )
+        outfile.write( "const int VALUE_MAP[] = " + valueListOutput + ";\n" )
+        outfile.write( "\n#endif\n" )
 
 # response = client.models.generate_content(
 #     model = "gemini-2.5-pro", 
